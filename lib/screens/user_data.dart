@@ -86,10 +86,7 @@ class UserData {
       'applyed': false,
     },
   ];
-  List<String> connectedUserPosts = ["lemona"];
-  // List<String> applyJobsList = [];
 
-  // Method to save data to SharedPreferences
   Future<void> saveDataToSharedPreferences() async {
     final prefs = await SharedPreferences.getInstance();
 
@@ -100,9 +97,6 @@ class UserData {
     await prefs.setString('jobListings', jobListingsJson);
   }
 
-  // Method to load data from SharedPreferences
-
-  // Method to load data from SharedPreferences
   Future<void> loadDataFromSharedPreferences() async {
     final prefs = await SharedPreferences.getInstance();
 
@@ -122,37 +116,21 @@ class UserData {
     }
   }
 
-  // Method to connect/disconnect user
-
-  Function(List<String>)? onUpdatePosts;
   void connectDisconnectUser(int index) {
-    if (candidates[index]['isConnected']) {
-      candidates[index]['isConnected'] = false;
-      connectedUserPosts.remove(candidates[index]['name']);
-    } else {
-      candidates[index]['isConnected'] = true;
-      connectedUserPosts.add(candidates[index]['name']);
-    }
+    candidates[index]['isConnected'] = !candidates[index]['isConnected'];
     saveDataToSharedPreferences();
   }
 
-  // Method to apply/unapply for jobs
   bool applyJobsUser(int index) {
-    // Check if the job is already applied
     bool isApplied = jobListings[index]['applyed'];
-    print(isApplied);
-    // If applied, mark it as unapplied and remove it from the applyJobsList
     if (isApplied) {
       jobListings[index]['applyed'] = false;
     } else {
-      // If not applied, mark it as applied
       jobListings[index]['applyed'] = true;
     }
 
-    // Save the updated data to SharedPreferences
     saveDataToSharedPreferences();
 
-    // Return whether the job is applied or not
     return !isApplied;
   }
 }

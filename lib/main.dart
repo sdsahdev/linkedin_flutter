@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_application_1/screens/candidates_screen.dart';
 import 'package:flutter_application_1/screens/home_screen.dart';
 import 'package:flutter_application_1/screens/job_listings_screen.dart';
 import 'package:flutter_application_1/screens/createPostScreen.dart';
@@ -23,8 +24,10 @@ class MyApp extends StatelessWidget {
     return MaterialApp(
       title: 'Flutter Job Portal',
       theme: ThemeData(
-        primarySwatch: Colors.blue,
+        primarySwatch: Colors.brown,
       ),
+      debugShowCheckedModeBanner: false, // Hide debug banner
+
       home: BottomNavScreen(userData: userData),
     );
   }
@@ -53,6 +56,10 @@ class _BottomNavScreenState extends State<BottomNavScreen> {
             label: 'Home',
           ),
           BottomNavigationBarItem(
+            icon: Icon(Icons.people),
+            label: 'Candidates',
+          ),
+          BottomNavigationBarItem(
             icon: Icon(Icons.work),
             label: 'Job List',
           ),
@@ -62,6 +69,11 @@ class _BottomNavScreenState extends State<BottomNavScreen> {
           ),
         ],
         currentIndex: _selectedIndex,
+        selectedItemColor:
+            Color.fromARGB(255, 0, 20, 37), // Change the color of selected item
+        unselectedItemColor:
+            Colors.grey, // Change the color of unselected items
+        backgroundColor: Colors.white,
         onTap: (index) {
           setState(() {
             _selectedIndex = index;
@@ -74,6 +86,7 @@ class _BottomNavScreenState extends State<BottomNavScreen> {
   List<Widget> get _widgetOptions {
     return [
       HomeScreen(userData: widget.userData),
+      CandidatesScreen(userData: widget.userData),
       JobListingsScreen(
         jobListings: widget.userData.jobListings,
         userData: widget.userData,

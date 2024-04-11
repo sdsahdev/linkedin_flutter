@@ -15,11 +15,15 @@ class JobListingsScreen extends StatelessWidget {
   });
   Widget buildImageWidget(String imagePath) {
     if (imagePath.startsWith('assets/')) {
-      // Use Image.asset for asset images
-      return Image.asset(imagePath);
+      return CircleAvatar(
+        backgroundImage: AssetImage(imagePath),
+        radius: 24, // Adjust the radius as needed
+      );
     } else {
-      // Use Image.file for file images
-      return Image.file(File(imagePath));
+      return CircleAvatar(
+        backgroundImage: FileImage(File(imagePath)),
+        radius: 24, // Adjust the radius as needed
+      );
     }
   }
 

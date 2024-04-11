@@ -56,25 +56,42 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
                       .toList(),
                 ),
                 SizedBox(height: 16),
-                TextFormField(
-                  controller: _descriptionController,
-                  decoration: InputDecoration(
-                    labelText:
-                        _postType == 'Post' ? 'Description' : 'Company Name',
+                if (_postType == 'Post')
+                  TextFormField(
+                    controller: _descriptionController,
+                    decoration: InputDecoration(
+                      labelText: 'Description',
+                    ),
+                    validator: (value) {
+                      if (value == null || value.isEmpty) {
+                        return 'Please enter a description';
+                      }
+                      return null;
+                    },
                   ),
-                  validator: (value) {
-                    if (value == null || value.isEmpty) {
-                      return _postType == 'Post'
-                          ? 'Please enter a description'
-                          : 'Please enter a company name';
-                    }
-                    return null;
-                  },
-                ),
-                SizedBox(height: 16),
                 if (_postType == 'Job Listing')
                   Column(
                     children: [
+                      TextFormField(
+                        controller: _companyController,
+                        decoration: InputDecoration(labelText: 'Company Name'),
+                        validator: (value) {
+                          if (value == null || value.isEmpty) {
+                            return 'Please enter a Company Name';
+                          }
+                          return null;
+                        },
+                      ),
+                      TextFormField(
+                        controller: _descriptionController,
+                        decoration: InputDecoration(labelText: 'Description'),
+                        validator: (value) {
+                          if (value == null || value.isEmpty) {
+                            return 'Please enter a Description';
+                          }
+                          return null;
+                        },
+                      ),
                       TextFormField(
                         controller: _positionController,
                         decoration: InputDecoration(labelText: 'Position'),
@@ -199,12 +216,16 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
   }
 
   void _submitJobListing() async {
-    String company = _descriptionController.text;
+    String company = _companyController.text;
+    String description = _descriptionController.text;
     String position = _positionController.text;
     String location = _locationController.text;
 
     // Check if any fields are empty
-    if (company.isEmpty || position.isEmpty || location.isEmpty) {
+    if (company.isEmpty ||
+        position.isEmpty ||
+        location.isEmpty ||
+        description.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('Please fill all fields')),
       );
@@ -225,7 +246,7 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
       'position': position,
       'companyLogo': _image!.path,
       'location': location,
-      'description': '',
+      'description': description,
       'applyed': false,
     };
 

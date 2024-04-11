@@ -6,30 +6,39 @@ import 'user_data.dart';
 class CandidateDetailScreen extends StatelessWidget {
   final Map<String, dynamic> candidate;
   final UserData userData;
-  final Function(List<String>) onUpdatePosts;
+  // final Function(List<String>) onUpdatePosts;
   final int index;
 
   const CandidateDetailScreen({
-    super.key,
+    Key? key,
     required this.candidate,
     required this.userData,
-    required this.onUpdatePosts,
+    // required this.onUpdatePosts,
     required this.index,
-  });
+  }) : super(key: key);
 
   Widget buildImageWidget(String imagePath) {
     if (imagePath.startsWith('assets/')) {
-      // Use Image.asset for asset images
-      return Image.asset(imagePath);
+      return Image.asset(
+        imagePath,
+        width: double.infinity,
+        fit: BoxFit.contain,
+        height: 200,
+      );
     } else {
-      // Use Image.file for file images
-      return Image.file(File(imagePath));
+      return Image.file(
+        File(imagePath),
+        width: double.infinity,
+        fit: BoxFit.contain,
+        height: 200,
+      );
     }
   }
 
   @override
   Widget build(BuildContext context) {
-    final bool isConnected = candidate['isConnected'];
+    final bool isConnected = candidate[
+        'isConnected']; // Get connection status directly from the candidate object
     return Scaffold(
       appBar: AppBar(
         title: const Text('Candidate Detail Screen'),
@@ -72,12 +81,32 @@ class CandidateDetailScreen extends StatelessWidget {
                     style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
                   ),
                   ElevatedButton(
+                    style: ButtonStyle(
+                      shape: MaterialStateProperty.all<RoundedRectangleBorder>(
+                        RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(20),
+                        ),
+                      ),
+                      backgroundColor: MaterialStateProperty.all<Color>(
+                        isConnected
+                            ? Color.fromARGB(255, 105, 104, 104)
+                            : Color.fromRGBO(161, 161, 161, 1),
+                      ),
+                    ),
                     onPressed: () {
                       userData.connectDisconnectUser(index);
-                      onUpdatePosts(userData.connectedUserPosts);
+                      // onUpdatePosts(userData.candidates
+                      //     .where((candidate) => candidate['isConnected'])
+                      //     .map<String>((candidate) => candidate['name'])
+                      //     .toList());
                       Navigator.pop(context);
                     },
-                    child: Text(isConnected ? 'Disconnect' : 'Connect'),
+                    child: Text(
+                      isConnected ? 'Disconnect' : 'Connect',
+                      style: TextStyle(
+                          fontSize: 16,
+                          color: Color.fromARGB(255, 255, 255, 255)),
+                    ),
                   ),
                   const SizedBox(height: 20),
                   ListView(
@@ -91,7 +120,14 @@ class CandidateDetailScreen extends StatelessWidget {
                           children: [
                             buildImageWidget(post['post']),
                             SizedBox(height: 5),
-                            Text(post['description']),
+                            Center(
+                              // Wrap the Text widget with Center widget
+                              child: Text(
+                                post['description'],
+                                textAlign: TextAlign
+                                    .center, // Set text alignment to center
+                              ),
+                            ),
                           ],
                         ),
                       );

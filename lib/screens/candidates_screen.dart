@@ -5,10 +5,12 @@ import 'candidate_detail_screen.dart';
 
 class CandidatesScreen extends StatelessWidget {
   final UserData userData;
-  final Function(List<String>) onUpdatePosts;
+  // final Function(List<String>) onUpdatePosts;
 
   const CandidatesScreen(
-      {super.key, required this.userData, required this.onUpdatePosts});
+      // {super.key, required this.userData, required this.onUpdatePosts});
+      {super.key,
+      required this.userData});
 
   @override
   Widget build(BuildContext context) {
@@ -33,7 +35,7 @@ class CandidatesScreen extends StatelessWidget {
                   builder: (context) => CandidateDetailScreen(
                     candidate: candidate,
                     userData: userData,
-                    onUpdatePosts: onUpdatePosts,
+                    // onUpdatePosts: onUpdatePosts,
                     index: index,
                   ),
                 ),
