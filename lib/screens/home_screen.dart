@@ -1,11 +1,12 @@
-import 'dart:io';
-import 'package:flutter/material.dart';
-import 'user_data.dart';
-import 'candidates_screen.dart';
+import 'dart:io'; // Importing necessary package for handling files
+import 'package:flutter/material.dart'; // Importing material package
+import 'user_data.dart'; // Import the UserData class to access candidate data
+import 'candidates_screen.dart'; // Importing CandidatesScreen class
 
 class HomeScreen extends StatefulWidget {
-  final UserData userData;
+  final UserData userData; // UserData object
 
+  // Constructor for HomeScreen
   const HomeScreen({Key? key, required this.userData}) : super(key: key);
 
   @override
@@ -27,17 +28,19 @@ class _HomeScreenState extends State<HomeScreen> {
   Widget build(BuildContext context) {
     // Check if userData is not null and candidates list is not empty
     if (widget.userData.candidates.isNotEmpty) {
-      return buildHomeScreen();
+      return buildHomeScreen(); // Build home screen with candidate data
     } else {
       // Show a loading indicator or empty screen while data is loading
       return Scaffold(
         body: Center(
-          child: CircularProgressIndicator(),
+          child:
+              CircularProgressIndicator(), // Show circular progress indicator
         ),
       );
     }
   }
 
+  // Build home screen with candidate data
   Widget buildHomeScreen() {
     return Padding(
       padding: EdgeInsets.only(bottom: 16.0),
@@ -51,7 +54,9 @@ class _HomeScreenState extends State<HomeScreen> {
               itemBuilder: (context, index) {
                 final candidate = widget.userData.candidates[index];
 
+                // Check if the candidate is connected
                 if (candidate['isConnected']) {
+                  // Display posts if connected
                   return Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
@@ -65,6 +70,7 @@ class _HomeScreenState extends State<HomeScreen> {
                           final isLastItem =
                               index == widget.userData.candidates.length - 1 &&
                                   postIndex == candidate['posts'].length - 1;
+                          // Build post widget
                           return Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
@@ -82,7 +88,7 @@ class _HomeScreenState extends State<HomeScreen> {
                     ],
                   );
                 } else {
-                  return Container();
+                  return Container(); // Return empty container if not connected
                 }
               },
             ),
@@ -92,8 +98,10 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
+  // Method to build image widget based on image path
   Widget buildImageWidget(String imagePath) {
     if (imagePath.startsWith('assets/')) {
+      // Load image from assets
       return Image.asset(
         imagePath,
         width: 300,
@@ -101,6 +109,7 @@ class _HomeScreenState extends State<HomeScreen> {
         fit: BoxFit.cover,
       );
     } else {
+      // Load image from file
       return Image.file(
         File(imagePath),
         width: 300,
@@ -110,6 +119,7 @@ class _HomeScreenState extends State<HomeScreen> {
     }
   }
 
+  // Method to build post widget
   Widget _buildPostWidget(
     String postImagePath,
     String profileImagePath,
@@ -120,12 +130,14 @@ class _HomeScreenState extends State<HomeScreen> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
+        // ListTile for user details
         ListTile(
           leading: CircleAvatar(
             backgroundImage: AssetImage(profileImagePath),
           ),
           title: Text(userName),
         ),
+        // Description of the post
         Padding(
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
           child: Text(
@@ -133,6 +145,7 @@ class _HomeScreenState extends State<HomeScreen> {
             style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
           ),
         ),
+        // Image of the post
         Center(
           child: buildImageWidget(postImagePath),
         ),
@@ -142,6 +155,7 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
+  // Method to update candidates data
   void updateCandidates(List<Map<String, dynamic>> updatedCandidates) {
     setState(() {
       widget.userData.candidates = updatedCandidates;

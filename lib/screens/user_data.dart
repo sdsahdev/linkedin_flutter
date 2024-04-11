@@ -87,50 +87,62 @@ class UserData {
     },
   ];
 
+  // Method to save candidate and job listing data to SharedPreferences
   Future<void> saveDataToSharedPreferences() async {
-    final prefs = await SharedPreferences.getInstance();
+    final prefs =
+        await SharedPreferences.getInstance(); // Get SharedPreferences instance
 
+    // Convert candidates list to JSON and save to SharedPreferences
     String candidatesJson = jsonEncode(candidates);
     await prefs.setString('candidates', candidatesJson);
 
+    // Convert jobListings list to JSON and save to SharedPreferences
     String jobListingsJson = jsonEncode(jobListings);
     await prefs.setString('jobListings', jobListingsJson);
   }
 
+  // Method to load candidate and job listing data from SharedPreferences
   Future<void> loadDataFromSharedPreferences() async {
-    final prefs = await SharedPreferences.getInstance();
+    final prefs =
+        await SharedPreferences.getInstance(); // Get SharedPreferences instance
 
+    // Load candidates JSON from SharedPreferences and decode
     String? candidatesJson = prefs.getString('candidates');
     if (candidatesJson != null && candidatesJson.isNotEmpty) {
       candidates = List<Map<String, dynamic>>.from(jsonDecode(candidatesJson));
     } else {
+      // If no data found in SharedPreferences, use default candidates list
       candidates = candidates;
     }
 
+    // Load jobListings JSON from SharedPreferences and decode
     String? jobListingsJson = prefs.getString('jobListings');
     if (jobListingsJson != null && jobListingsJson.isNotEmpty) {
       jobListings =
           List<Map<String, dynamic>>.from(jsonDecode(jobListingsJson));
     } else {
+      // If no data found in SharedPreferences, use default jobListings list
       jobListings = jobListings;
     }
   }
 
+  // Method to connect/disconnect a user at a specific index
   void connectDisconnectUser(int index) {
+    // Toggle the 'isConnected' status of the candidate at the given index
     candidates[index]['isConnected'] = !candidates[index]['isConnected'];
+    // Save the updated data to SharedPreferences
     saveDataToSharedPreferences();
   }
 
+  // Method to apply/unapply for a job listing at a specific index
   bool applyJobsUser(int index) {
+    // Get the current application status
     bool isApplied = jobListings[index]['applyed'];
-    if (isApplied) {
-      jobListings[index]['applyed'] = false;
-    } else {
-      jobListings[index]['applyed'] = true;
-    }
-
+    // Toggle the application status
+    jobListings[index]['applyed'] = !isApplied;
+    // Save the updated data to SharedPreferences
     saveDataToSharedPreferences();
-
+    // Return the new application status
     return !isApplied;
   }
 }

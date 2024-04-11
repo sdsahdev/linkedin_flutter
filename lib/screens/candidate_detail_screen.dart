@@ -1,24 +1,23 @@
-import 'dart:io';
-
+import 'dart:io'; // Importing necessary package for handling files
 import 'package:flutter/material.dart';
-import 'user_data.dart';
+import 'user_data.dart'; // Importing UserData class
 
 class CandidateDetailScreen extends StatelessWidget {
-  final Map<String, dynamic> candidate;
-  final UserData userData;
-  // final Function(List<String>) onUpdatePosts;
-  final int index;
+  final Map<String, dynamic> candidate; // Candidate data
+  final UserData userData; // UserData object
+  final int index; // Index of the candidate
 
   const CandidateDetailScreen({
     Key? key,
     required this.candidate,
     required this.userData,
-    // required this.onUpdatePosts,
     required this.index,
   }) : super(key: key);
 
+  // Method to build image widget based on image path
   Widget buildImageWidget(String imagePath) {
     if (imagePath.startsWith('assets/')) {
+      // If image is from assets
       return Image.asset(
         imagePath,
         width: double.infinity,
@@ -26,6 +25,7 @@ class CandidateDetailScreen extends StatelessWidget {
         height: 200,
       );
     } else {
+      // If image is from file system
       return Image.file(
         File(imagePath),
         width: double.infinity,
@@ -37,16 +37,17 @@ class CandidateDetailScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final bool isConnected = candidate[
-        'isConnected']; // Get connection status directly from the candidate object
+    final bool isConnected = candidate['isConnected']; // Connection status
+
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Candidate Detail Screen'),
+        title: const Text('Candidate Detail Screen'), // App bar title
       ),
       body: SingleChildScrollView(
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
+            // Display candidate profile image
             Center(
               child: CircleAvatar(
                 backgroundImage: AssetImage(candidate['profileImage']),
@@ -59,6 +60,7 @@ class CandidateDetailScreen extends StatelessWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
+                  // Display candidate information
                   Text(
                     candidate['name'],
                     style: const TextStyle(
@@ -81,6 +83,7 @@ class CandidateDetailScreen extends StatelessWidget {
                     style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
                   ),
                   ElevatedButton(
+                    // Button to connect/disconnect user
                     style: ButtonStyle(
                       shape: MaterialStateProperty.all<RoundedRectangleBorder>(
                         RoundedRectangleBorder(
@@ -94,12 +97,9 @@ class CandidateDetailScreen extends StatelessWidget {
                       ),
                     ),
                     onPressed: () {
+                      // Action to connect/disconnect user
                       userData.connectDisconnectUser(index);
-                      // onUpdatePosts(userData.candidates
-                      //     .where((candidate) => candidate['isConnected'])
-                      //     .map<String>((candidate) => candidate['name'])
-                      //     .toList());
-                      Navigator.pop(context);
+                      Navigator.pop(context); // Close this screen
                     },
                     child: Text(
                       isConnected ? 'Disconnect' : 'Connect',
@@ -110,6 +110,7 @@ class CandidateDetailScreen extends StatelessWidget {
                   ),
                   const SizedBox(height: 20),
                   ListView(
+                    // List of candidate's posts
                     shrinkWrap: true,
                     physics: const NeverScrollableScrollPhysics(),
                     children: candidate['posts'].map<Widget>((post) {
@@ -118,14 +119,14 @@ class CandidateDetailScreen extends StatelessWidget {
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.stretch,
                           children: [
+                            // Display post image
                             buildImageWidget(post['post']),
                             SizedBox(height: 5),
                             Center(
-                              // Wrap the Text widget with Center widget
+                              // Display post description
                               child: Text(
                                 post['description'],
-                                textAlign: TextAlign
-                                    .center, // Set text alignment to center
+                                textAlign: TextAlign.center,
                               ),
                             ),
                           ],

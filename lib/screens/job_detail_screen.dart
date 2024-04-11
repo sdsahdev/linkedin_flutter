@@ -1,33 +1,35 @@
-import 'dart:io';
-
-import 'package:flutter/material.dart';
-import 'user_data.dart';
+import 'dart:io'; // Importing necessary package for handling files
+import 'package:flutter/material.dart'; // Importing material package
+import 'user_data.dart'; // Import the UserData class to access job listing data
 
 class JobDetailScreen extends StatefulWidget {
-  final Map<String, dynamic> job;
-  final UserData userData;
-  final int index;
-  const JobDetailScreen(
-      {Key? key,
-      required this.job,
-      required this.userData,
-      required this.index})
-      : super(key: key);
+  final Map<String, dynamic> job; // Job details
+  final UserData userData; // UserData object
+  final int index; // Index of the job listing
+  const JobDetailScreen({
+    Key? key,
+    required this.job,
+    required this.userData,
+    required this.index,
+  }) : super(key: key);
 
   @override
   _JobDetailScreenState createState() => _JobDetailScreenState();
 }
 
 class _JobDetailScreenState extends State<JobDetailScreen> {
-  late bool hasApplied;
+  late bool hasApplied; // Flag to track if user has applied
 
   @override
   void initState() {
     super.initState();
-    hasApplied = widget.userData.jobListings[widget.index]["applyed"];
-    print(widget.userData.jobListings[widget.index]["applyed"]);
+    hasApplied = widget.userData.jobListings[widget.index]
+        ["applyed"]; // Initialize hasApplied flag
+    print(widget.userData.jobListings[widget.index]
+        ["applyed"]); // Print applyed status for debugging
   }
 
+  // Method to build image widget based on image path
   Widget buildImageWidget(String imagePath) {
     if (imagePath.startsWith('assets/')) {
       // Use Image.asset for asset images
@@ -42,7 +44,7 @@ class _JobDetailScreenState extends State<JobDetailScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text(widget.job['position']),
+        title: Text(widget.job['position']), // Display job position in app bar
       ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(16),
@@ -57,7 +59,8 @@ class _JobDetailScreenState extends State<JobDetailScreen> {
               child: SizedBox(
                 width: double.infinity,
                 height: 200,
-                child: buildImageWidget(widget.job['companyLogo']),
+                child: buildImageWidget(
+                    widget.job['companyLogo']), // Display company logo
               ),
             ),
             const SizedBox(height: 16),
@@ -70,17 +73,21 @@ class _JobDetailScreenState extends State<JobDetailScreen> {
                 ),
                 backgroundColor: MaterialStateProperty.all<Color>(
                   hasApplied
-                      ? Color.fromARGB(255, 105, 104, 104)
+                      ? Color.fromARGB(
+                          255, 105, 104, 104) // Change button color if applied
                       : Color.fromRGBO(161, 161, 161, 1),
                 ),
               ),
               onPressed: () {
                 setState(() {
-                  hasApplied = widget.userData.applyJobsUser(widget.index);
+                  hasApplied = widget.userData
+                      .applyJobsUser(widget.index); // Update apply status
                 });
               },
               child: Text(
-                hasApplied ? 'You have applied' : 'Apply Now',
+                hasApplied
+                    ? 'You have applied'
+                    : 'Apply Now', // Change button text based on apply status
                 style: TextStyle(
                     fontSize: 16, color: Color.fromARGB(255, 255, 255, 255)),
               ),
@@ -118,6 +125,7 @@ class _JobDetailScreenState extends State<JobDetailScreen> {
   }
 }
 
+// Method to build a row for job details
 Widget _buildDetailRow({
   required IconData icon,
   required String label,

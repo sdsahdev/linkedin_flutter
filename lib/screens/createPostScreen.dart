@@ -1,15 +1,15 @@
-// Import necessary packages and files
-import 'dart:convert';
-
-import 'package:flutter/material.dart';
-import 'package:image_picker/image_picker.dart';
-import 'package:shared_preferences/shared_preferences.dart';
-import 'dart:io';
+// Importing necessary packages and files
+import 'dart:convert'; // Importing package for encoding and decoding JSON
+import 'package:flutter/material.dart'; // Importing material package
+import 'package:image_picker/image_picker.dart'; // Importing image picker package
+import 'package:shared_preferences/shared_preferences.dart'; // Importing shared_preferences package
+import 'dart:io'; // Importing file handling package
 import 'user_data.dart'; // Import the UserData class to access the jobListings list
 
 class CreatePostScreen extends StatefulWidget {
-  final UserData userData;
+  final UserData userData; // UserData object
 
+  // Constructor for CreatePostScreen
   const CreatePostScreen({Key? key, required this.userData}) : super(key: key);
 
   @override
@@ -17,23 +17,28 @@ class CreatePostScreen extends StatefulWidget {
 }
 
 class _CreatePostScreenState extends State<CreatePostScreen> {
-  String _postType = 'Post';
-  final _formKey = GlobalKey<FormState>();
-  final _descriptionController = TextEditingController();
-  final _companyController = TextEditingController();
-  final _positionController = TextEditingController();
-  final _locationController = TextEditingController();
-  File? _image;
+  String _postType = 'Post'; // Initial post type
+  final _formKey = GlobalKey<FormState>(); // Form key
+  final _descriptionController =
+      TextEditingController(); // Controller for description field
+  final _companyController =
+      TextEditingController(); // Controller for company field
+  final _positionController =
+      TextEditingController(); // Controller for position field
+  final _locationController =
+      TextEditingController(); // Controller for location field
+  File? _image; // Variable to hold selected image
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      resizeToAvoidBottomInset: false,
+      resizeToAvoidBottomInset: false, // Avoid resizing on keyboard appearance
       appBar: AppBar(
-        title: Text('Create $_postType'),
+        title:
+            Text('Create $_postType'), // App bar title with dynamic post type
       ),
       body: SingleChildScrollView(
-        // Wrap with SingleChildScrollView
+        // Wrap with SingleChildScrollView to avoid overflow
         child: Padding(
           padding: const EdgeInsets.all(16.0),
           child: Form(
@@ -41,11 +46,12 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
+                // Dropdown for selecting post type
                 DropdownButtonFormField<String>(
                   value: _postType,
                   onChanged: (newValue) {
                     setState(() {
-                      _postType = newValue!;
+                      _postType = newValue!; // Update selected post type
                     });
                   },
                   items: ['Post', 'Job Listing']
@@ -56,6 +62,7 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
                       .toList(),
                 ),
                 SizedBox(height: 16),
+                // Text form field for description (visible only for Post type)
                 if (_postType == 'Post')
                   TextFormField(
                     controller: _descriptionController,
@@ -69,6 +76,7 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
                       return null;
                     },
                   ),
+                // Text form fields for Job Listing details (visible only for Job Listing type)
                 if (_postType == 'Job Listing')
                   Column(
                     children: [
@@ -115,6 +123,7 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
                     ],
                   ),
                 SizedBox(height: 16),
+                // Button to select image
                 Center(
                   child: ElevatedButton(
                     onPressed: _showImagePicker,
@@ -122,6 +131,7 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
                   ),
                 ),
                 SizedBox(height: 16),
+                // Display selected image
                 Center(
                   child: _image != null
                       ? Image.file(
@@ -130,14 +140,15 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
                           width: 100,
                           fit: BoxFit.cover,
                         )
-                      : Container(), // You might want to display a placeholder if _image is null
+                      : Container(), // Placeholder if image is null
                 ),
                 SizedBox(height: 16),
+                // Button to submit post/job listing
                 Center(
                   child: ElevatedButton(
                     onPressed: () {
                       if (_formKey.currentState!.validate()) {
-                        _submitPost();
+                        _submitPost(); // Submit post/job listing
                       }
                     },
                     child: Text('Submit'),
@@ -151,96 +162,99 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
     );
   }
 
+  // Method to show image picker
   void _showImagePicker() async {
     final picker = ImagePicker();
     final pickedImage = await picker.pickImage(source: ImageSource.gallery);
 
     setState(() {
       if (pickedImage != null) {
-        _image = File(pickedImage.path);
+        _image = File(pickedImage.path); // Set selected image
       } else {
         print('No image selected.');
       }
     });
   }
 
+  // Method to submit post/job listing based on selected type
   void _submitPost() async {
-    // Check the post type and collect relevant data
     if (_postType == 'Post') {
-      _submitRegularPost();
+      _submitRegularPost(); // Submit regular post
     } else if (_postType == 'Job Listing') {
-      _submitJobListing();
+      _submitJobListing(); // Submit job listing
     }
   }
 
+  // Method to submit regular post
   void _submitRegularPost() async {
     String description = _descriptionController.text;
 
-    // Check if an image has been selected
     if (_image == null) {
+      // Check if an image has been selected
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('Please select an image')),
       );
       return;
     }
 
-    // Create a new post map with String values
     Map<String, String> newPost = {
       'description': description,
       'post': _image!.path,
     };
 
-    // Update the 'posts' list of the 'lemona' candidate
+    // Update 'posts' list of 'lemona' candidate
     int lemonaIndex = widget.userData.candidates
         .indexWhere((candidate) => candidate['name'] == 'lemona');
     if (lemonaIndex != -1) {
       widget.userData.candidates[lemonaIndex]['posts'].add(newPost);
 
-      await _savepostToSharedPreferences(widget.userData.candidates);
+      await _savepostToSharedPreferences(
+          widget.userData.candidates); // Save to SharedPreferences
     } else {
+      // Show error if candidate 'lemona' is not found
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('Candidate "lemona" not found')),
       );
-      return; // Exit the method if candidate 'lemona' is not found
+      return;
     }
 
-    // Clear the description field
-    _descriptionController.clear();
+    _descriptionController.clear(); // Clear description field
     setState(() {
-      _image = null;
+      _image = null; // Reset image
     });
 
+    // Show success message
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(content: Text('Post submitted successfully')),
     );
   }
 
+  // Method to submit job listing
   void _submitJobListing() async {
     String company = _companyController.text;
     String description = _descriptionController.text;
     String position = _positionController.text;
     String location = _locationController.text;
 
-    // Check if any fields are empty
     if (company.isEmpty ||
         position.isEmpty ||
         location.isEmpty ||
         description.isEmpty) {
+      // Check if any field is empty
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('Please fill all fields')),
       );
-      return; // Exit the method if any field is empty
+      return;
     }
 
-    // Check if an image has been selected
     if (_image == null) {
+      // Check if an image has been selected
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('Please select an image')),
       );
       return;
     }
 
-    // Create a new job listing map
     Map<String, dynamic> newJobListing = {
       'company': company,
       'position': position,
@@ -250,11 +264,12 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
       'applyed': false,
     };
 
-    // Add the new job listing to the jobListings list
+    // Add new job listing to jobListings list
     widget.userData.jobListings.add(newJobListing);
-    await _saveJobListingsToSharedPreferences(widget.userData.jobListings);
+    await _saveJobListingsToSharedPreferences(
+        widget.userData.jobListings); // Save to SharedPreferences
 
-    // Clear the text fields and reset the image
+    // Clear text fields and reset image
     _companyController.clear();
     _positionController.clear();
     _locationController.clear();
@@ -263,33 +278,35 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
       _image = null;
     });
 
+    // Show success message
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(content: Text('Job listing submitted successfully')),
     );
   }
 
-// Method to save job listings data to SharedPreferences
+  // Method to save job listings data to SharedPreferences
   Future<void> _saveJobListingsToSharedPreferences(
       List<Map<String, dynamic>> jobListings) async {
-    // Serialize the job listings data to JSON
-    String jobListingsJson = jsonEncode(jobListings);
+    String jobListingsJson =
+        jsonEncode(jobListings); // Serialize job listings data to JSON
 
-    // Get the SharedPreferences instance
-    SharedPreferences prefs = await SharedPreferences.getInstance();
+    SharedPreferences prefs =
+        await SharedPreferences.getInstance(); // Get SharedPreferences instance
 
-    // Save the serialized job listings data to SharedPreferences
+    // Save serialized job listings data to SharedPreferences
     await prefs.setString('jobListings', jobListingsJson);
   }
 
+  // Method to save post data to SharedPreferences
   Future<void> _savepostToSharedPreferences(
       List<Map<String, dynamic>> candidates) async {
-    // Serialize the job listings data to JSON
-    String candidatesJson = jsonEncode(candidates);
+    String candidatesJson =
+        jsonEncode(candidates); // Serialize candidates data to JSON
 
-    // Get the SharedPreferences instance
-    SharedPreferences prefs = await SharedPreferences.getInstance();
+    SharedPreferences prefs =
+        await SharedPreferences.getInstance(); // Get SharedPreferences instance
 
-    // Save the serialized job listings data to SharedPreferences
+    // Save serialized candidates data to SharedPreferences
     await prefs.setString('candidates', candidatesJson);
   }
 }
