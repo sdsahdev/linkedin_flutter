@@ -1,54 +1,110 @@
-import 'dart:io'; // Importing necessary package for handling files
 import 'package:flutter/material.dart';
-import 'user_data.dart'; // Importing UserData class
-import 'candidate_detail_screen.dart'; // Importing CandidateDetailScreen class
+import 'package:firebase_database/firebase_database.dart';
+import 'package:flutter_application_1/screens/candidate_detail_screen.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 
-class CandidatesScreen extends StatelessWidget {
-  final UserData userData; // UserData object
-  // final Function(List<String>) onUpdatePosts; // Function to update posts
+class CandidatesScreen extends StatefulWidget {
+  @override
+  _CandidatesScreenState createState() => _CandidatesScreenState();
+}
 
-  // Constructor to initialize CandidatesScreen
-  const CandidatesScreen({
-    Key? key,
-    required this.userData,
-    // required this.onUpdatePosts,
-  }) : super(key: key);
+class _CandidatesScreenState extends State<CandidatesScreen> {
+  final DatabaseReference _candidatesRef =
+      FirebaseDatabase.instance.reference().child('candidates');
+
+  List<Map<String, dynamic>> candidates = []; // List to store candidates data
+  bool isLoading = true; // Indicator for loading state
+
+  @override
+  void initState() {
+    super.initState();
+    fetchCandidates(); // Call function to fetch candidates data
+  }
+
+  void fetchCandidates() async {
+    try {
+      print('Fetching candidates...');
+      DatabaseEvent event =
+          await _candidatesRef.once(); // Fetch candidates data
+      print('Candidates fetched successfully.');
+
+      DataSnapshot snapshot = event.snapshot;
+
+      if (snapshot.value != null && snapshot.value is Map<dynamic, dynamic>) {
+        // Convert the snapshot value to a List<Map<String, dynamic>> by iterating over the entries
+        List<Map<String, dynamic>> candidateDataList = [];
+        (snapshot.value as Map<dynamic, dynamic>).forEach((key, value) {
+          if (value is Map<dynamic, dynamic>) {
+            // Exclude the current user's data
+            if (key != FirebaseAuth.instance.currentUser?.uid) {
+              // Add each candidate map to the list
+              candidateDataList
+                  .add({...value, 'id': key}); // Include the candidate ID
+            }
+          }
+        });
+
+        print(
+            'Snapshot value is not null and is of type Map<dynamic, dynamic>.');
+        print('Converted candidate data: $candidateDataList');
+
+        setState(() {
+          candidates = candidateDataList; // Update the candidates list
+          isLoading = false; // Set loading indicator to false
+        });
+      } else {
+        print('No candidates available or data format is incorrect.');
+      }
+    } catch (error) {
+      print('Error fetching candidates: $error');
+      // Handle error or show error message
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Candidates Screen'), // App bar title
+        title: Text('Candidates Screen'),
       ),
-      body: ListView.builder(
-        itemCount: userData.candidates.length, // Number of candidates
-        itemBuilder: (context, index) {
-          final candidate =
-              userData.candidates[index]; // Current candidate data
-          return ListTile(
-            leading: CircleAvatar(
-              // Candidate profile image
-              backgroundImage: AssetImage(candidate['profileImage']),
-            ),
-            title: Text(candidate['name']), // Candidate name
-            subtitle: Text(candidate['position']), // Candidate position
-            onTap: () {
-              // Navigate to candidate detail screen on tap
-              Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (context) => CandidateDetailScreen(
-                    candidate: candidate, // Candidate data
-                    userData: userData, // UserData object
-                    // onUpdatePosts: onUpdatePosts,
-                    index: index, // Index of the candidate
-                  ),
+      body: isLoading
+          ? Center(
+              child:
+                  CircularProgressIndicator()) // Show loading indicator while fetching data
+          : candidates.isEmpty
+              ? Center(
+                  child: Text(
+                      'No candidates available')) // Show message if no candidates available
+              : ListView.builder(
+                  itemCount: candidates.length,
+                  itemBuilder: (context, index) {
+                    final candidate = candidates[index];
+                    final String name = candidate['name'] as String? ?? '';
+                    final String position =
+                        candidate['position'] as String? ?? '';
+                    return ListTile(
+                      leading: CircleAvatar(
+                        // Use a fallback image if profileImage is null
+                        backgroundImage: NetworkImage(
+                          candidate['profileImage'] as String? ??
+                              'assets/images/default_profile_image.png',
+                        ),
+                      ),
+                      title: Text(name),
+                      subtitle: Text(position),
+                      onTap: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => CandidateDetailScreen(
+                              candidate: candidate,
+                            ),
+                          ),
+                        );
+                      },
+                    );
+                  },
                 ),
-              );
-            },
-          );
-        },
-      ),
     );
   }
 }

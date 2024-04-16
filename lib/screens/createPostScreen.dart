@@ -1,16 +1,14 @@
 // Importing necessary packages and files
-import 'dart:convert'; // Importing package for encoding and decoding JSON
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:firebase_database/firebase_database.dart';
+import 'package:firebase_storage/firebase_storage.dart';
 import 'package:flutter/material.dart'; // Importing material package
 import 'package:image_picker/image_picker.dart'; // Importing image picker package
-import 'package:shared_preferences/shared_preferences.dart'; // Importing shared_preferences package
 import 'dart:io'; // Importing file handling package
-import 'user_data.dart'; // Import the UserData class to access the jobListings list
 
 class CreatePostScreen extends StatefulWidget {
-  final UserData userData; // UserData object
-
   // Constructor for CreatePostScreen
-  const CreatePostScreen({Key? key, required this.userData}) : super(key: key);
+  const CreatePostScreen({Key? key}) : super(key: key);
 
   @override
   _CreatePostScreenState createState() => _CreatePostScreenState();
@@ -18,6 +16,8 @@ class CreatePostScreen extends StatefulWidget {
 
 class _CreatePostScreenState extends State<CreatePostScreen> {
   String _postType = 'Post'; // Initial post type
+  bool _isLoading = false; // Variable to track loading state
+
   final _formKey = GlobalKey<FormState>(); // Form key
   final _descriptionController =
       TextEditingController(); // Controller for description field
@@ -148,10 +148,15 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
                   child: ElevatedButton(
                     onPressed: () {
                       if (_formKey.currentState!.validate()) {
+                        setState(() {
+                          _isLoading = true; // Set loading state to true
+                        });
                         _submitPost(); // Submit post/job listing
                       }
                     },
-                    child: Text('Submit'),
+                    child: _isLoading // Conditional rendering based on loading state
+                        ? CircularProgressIndicator() // Show loader if loading
+                        : Text('Submit'), // Show 'Submit' text if not loading
                   ),
                 )
               ],
@@ -187,8 +192,16 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
 
   // Method to submit regular post
   void _submitRegularPost() async {
+    // Get the UID of the authenticated user
+    String? uid = FirebaseAuth.instance.currentUser?.uid;
+    if (uid == null) {
+      // User is not authenticated
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('User not authenticated')),
+      );
+      return;
+    }
     String description = _descriptionController.text;
-
     if (_image == null) {
       // Check if an image has been selected
       ScaffoldMessenger.of(context).showSnackBar(
@@ -196,33 +209,44 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
       );
       return;
     }
+    Reference storageReference =
+        FirebaseStorage.instance.ref().child('posts/${DateTime.now()}.png');
 
-    Map<String, String> newPost = {
+    // Upload the file to Firebase Storage
+    UploadTask uploadTask = storageReference.putFile(_image!);
+
+    // Wait for the upload to complete
+    await uploadTask;
+
+    // Get the download URL of the uploaded image
+    String imageUrl = await storageReference.getDownloadURL();
+
+    print('Image uploaded successfully. Download URL: $imageUrl');
+
+    // Update post data with image URL
+    Map<String, dynamic> newPost = {
       'description': description,
-      'post': _image!.path,
+      'postImage': imageUrl,
     };
 
     // Update 'posts' list of 'lemona' candidate
-    int lemonaIndex = widget.userData.candidates
-        .indexWhere((candidate) => candidate['name'] == 'lemona');
-    if (lemonaIndex != -1) {
-      widget.userData.candidates[lemonaIndex]['posts'].add(newPost);
+    DatabaseReference postsRef = FirebaseDatabase.instance
+        .reference()
+        .child('candidates')
+        .child(uid)
+        .child('posts');
 
-      await _savepostToSharedPreferences(
-          widget.userData.candidates); // Save to SharedPreferences
-    } else {
-      // Show error if candidate 'lemona' is not found
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Candidate "lemona" not found')),
-      );
-      return;
-    }
+    // Push the new post data to generate a unique key
+    postsRef.push().set(newPost);
 
     _descriptionController.clear(); // Clear description field
     setState(() {
       _image = null; // Reset image
     });
 
+    setState(() {
+      _isLoading = false; // Reset loading state
+    });
     // Show success message
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(content: Text('Post submitted successfully')),
@@ -250,63 +274,61 @@ class _CreatePostScreenState extends State<CreatePostScreen> {
     if (_image == null) {
       // Check if an image has been selected
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Please select an image')),
+        SnackBar(content: Text('Please select a company logo')),
       );
       return;
     }
 
-    Map<String, dynamic> newJobListing = {
-      'company': company,
-      'position': position,
-      'companyLogo': _image!.path,
-      'location': location,
-      'description': description,
-      'applyed': false,
-    };
+    try {
+      // Upload company logo to Firebase Storage
+      Reference storageReference = FirebaseStorage.instance
+          .ref()
+          .child('companylogo/${DateTime.now()}.png');
+      UploadTask uploadTask = storageReference.putFile(_image!);
+      TaskSnapshot taskSnapshot = await uploadTask;
 
-    // Add new job listing to jobListings list
-    widget.userData.jobListings.add(newJobListing);
-    await _saveJobListingsToSharedPreferences(
-        widget.userData.jobListings); // Save to SharedPreferences
+      // Get download URL of the uploaded logo
+      String logoUrl = await taskSnapshot.ref.getDownloadURL();
 
-    // Clear text fields and reset image
-    _companyController.clear();
-    _positionController.clear();
-    _locationController.clear();
-    _descriptionController.clear();
-    setState(() {
-      _image = null;
-    });
+      // Create a new job listing object with logo URL
+      Map<String, dynamic> newJobListing = {
+        'company': company,
+        'position': position,
+        'companyLogo': logoUrl,
+        'location': location,
+        'description': description,
+        'applied': false,
+      };
 
-    // Show success message
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text('Job listing submitted successfully')),
-    );
-  }
+      // Save the job listing to Firebase Realtime Database
+      DatabaseReference jobListingsRef =
+          FirebaseDatabase.instance.reference().child('jobListings');
+      jobListingsRef.push().set(newJobListing);
 
-  // Method to save job listings data to SharedPreferences
-  Future<void> _saveJobListingsToSharedPreferences(
-      List<Map<String, dynamic>> jobListings) async {
-    String jobListingsJson =
-        jsonEncode(jobListings); // Serialize job listings data to JSON
+      // Clear text fields and reset image
+      _companyController.clear();
+      _positionController.clear();
+      _locationController.clear();
+      _descriptionController.clear();
+      setState(() {
+        _image = null;
+      });
 
-    SharedPreferences prefs =
-        await SharedPreferences.getInstance(); // Get SharedPreferences instance
-
-    // Save serialized job listings data to SharedPreferences
-    await prefs.setString('jobListings', jobListingsJson);
-  }
-
-  // Method to save post data to SharedPreferences
-  Future<void> _savepostToSharedPreferences(
-      List<Map<String, dynamic>> candidates) async {
-    String candidatesJson =
-        jsonEncode(candidates); // Serialize candidates data to JSON
-
-    SharedPreferences prefs =
-        await SharedPreferences.getInstance(); // Get SharedPreferences instance
-
-    // Save serialized candidates data to SharedPreferences
-    await prefs.setString('candidates', candidatesJson);
+      setState(() {
+        _isLoading = false; // Reset loading state
+      });
+      // Show success message
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Job listing submitted successfully')),
+      );
+    } catch (error) {
+      print('Error submitting job listing: $error');
+      // Show error message
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+            content:
+                Text('Failed to submit job listing. Please try again later.')),
+      );
+    }
   }
 }

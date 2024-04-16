@@ -1,0 +1,5 @@
+flutter_native_splash:
+image_path: assets/images/exodus.gif
+color: "#42a5f5"
+android_gravity: center
+ios_content_mode: center

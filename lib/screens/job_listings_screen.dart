@@ -1,33 +1,53 @@
-import 'dart:io'; // Importing necessary package for handling files
-import 'package:flutter/material.dart'; // Importing material package
-import 'user_data.dart'; // Importing UserData class
-import 'job_detail_screen.dart'; // Importing JobDetailScreen class
+import 'dart:convert';
+import 'dart:io';
+import 'package:flutter/material.dart';
+import 'package:http/http.dart' as http;
+import 'job_detail_screen.dart';
 
-class JobListingsScreen extends StatelessWidget {
-  final List<Map<String, dynamic>> jobListings; // List of job listings
-  final UserData userData; // UserData object
+class JobListingsScreen extends StatefulWidget {
+  const JobListingsScreen({Key? key}) : super(key: key);
 
-  // Constructor for JobListingsScreen
-  const JobListingsScreen({
-    super.key,
-    required this.jobListings,
-    required this.userData,
-  });
+  @override
+  _JobListingsScreenState createState() => _JobListingsScreenState();
+}
 
-  // Method to build image widget based on image path
-  Widget buildImageWidget(String imagePath) {
-    if (imagePath.startsWith('assets/')) {
-      // Use AssetImage for asset images
-      return CircleAvatar(
-        backgroundImage: AssetImage(imagePath),
-        radius: 24, // Adjust the radius as needed
-      );
-    } else {
-      // Use FileImage for file images
-      return CircleAvatar(
-        backgroundImage: FileImage(File(imagePath)),
-        radius: 24, // Adjust the radius as needed
-      );
+class _JobListingsScreenState extends State<JobListingsScreen> {
+  List<Map<String, dynamic>> jobListings = [];
+  bool isLoading = true;
+
+  @override
+  void initState() {
+    super.initState();
+    fetchJobListings();
+  }
+
+  Future<void> fetchJobListings() async {
+    try {
+      final response = await http.get(Uri.parse(
+          'https://fir-projectactivity-default-rtdb.firebaseio.com/jobListings.json'));
+      if (response.statusCode == 200) {
+        final data = json.decode(response.body) as Map<String, dynamic>;
+        final List<Map<String, dynamic>> fetchedListings = [];
+        data.forEach((key, value) {
+          fetchedListings.add({
+            'key': key,
+            'company': value['company'],
+            'companyLogo': value['companyLogo'],
+            'description': value['description'],
+            'location': value['location'],
+            'position': value['position'],
+          });
+        });
+        setState(() {
+          jobListings = fetchedListings;
+          isLoading = false; // Set isLoading to false when data is fetched
+        });
+      } else {
+        throw Exception('Failed to load job listings');
+      }
+    } catch (error) {
+      print('Error fetching job listings: $error');
+      // Handle error or show error message
     }
   }
 
@@ -35,34 +55,57 @@ class JobListingsScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Job Listings'), // App bar title
+        title: const Text('Job Listings'),
       ),
-      body: ListView.builder(
-        itemCount: jobListings.length,
-        itemBuilder: (context, index) {
-          final job = jobListings[index]; // Get job details for current index
-          return ListTile(
-            leading: CircleAvatar(
-              backgroundColor: Colors.transparent,
-              radius: 24, // Specify the radius of the CircleAvatar
-              child: buildImageWidget(
-                  job['companyLogo']), // Build image widget for company logo
-            ),
-            title: Text(job['position']), // Display job position
-            subtitle: Text(job['company']), // Display company name as subtitle
-            onTap: () {
-              // Navigate to JobDetailScreen when tapped
-              Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (context) => JobDetailScreen(
-                    job: job,
-                    userData: userData,
-                    index: index,
+      body: isLoading
+          ? Center(
+              child: CircularProgressIndicator(), // Show loader in the center
+            )
+          : ListView.builder(
+              itemCount: jobListings.length,
+              itemBuilder: (context, index) {
+                final job = jobListings[index];
+                return ListTile(
+                  leading: CircleAvatar(
+                    backgroundColor: Colors.transparent,
+                    radius: 24,
+                    child: buildImageWidget(job['companyLogo']),
                   ),
-                ),
-              );
-            },
+                  title: Text(job['position']),
+                  subtitle: Text(job['company']),
+                  onTap: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => JobDetailScreen(
+                          job: job,
+                        ),
+                      ),
+                    );
+                  },
+                );
+              },
+            ),
+    );
+  }
+
+  Widget buildImageWidget(String? imageUrl) {
+    if (imageUrl == null || imageUrl.isEmpty) {
+      return CircleAvatar(
+        child: Icon(Icons.business),
+        backgroundColor: Colors.grey, // Placeholder color
+      );
+    }
+    return ClipOval(
+      child: Image.network(
+        imageUrl,
+        width: 48, // Adjust the width and height as needed
+        height: 48,
+        fit: BoxFit.cover,
+        errorBuilder: (context, error, stackTrace) {
+          return CircleAvatar(
+            child: Icon(Icons.error),
+            backgroundColor: Colors.red, // Placeholder color
           );
         },
       ),

@@ -1,103 +1,95 @@
-import 'package:flutter/material.dart'; // Importing necessary packages
+import 'package:firebase_core/firebase_core.dart';
+import 'package:flutter/material.dart';
+import 'package:flutter_application_1/screens/authentication_wrapper.dart';
 import 'package:flutter_application_1/screens/candidates_screen.dart';
 import 'package:flutter_application_1/screens/home_screen.dart';
 import 'package:flutter_application_1/screens/job_listings_screen.dart';
 import 'package:flutter_application_1/screens/createPostScreen.dart';
-import 'package:flutter_application_1/screens/user_data.dart';
-import 'package:shared_preferences/shared_preferences.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 
 void main() async {
-  WidgetsFlutterBinding
-      .ensureInitialized(); // Ensure that Flutter bindings are initialized
-  SharedPreferences prefs = await SharedPreferences
-      .getInstance(); // Get an instance of SharedPreferences
-  UserData userData =
-      UserData(prefs: prefs); // Create a UserData object with SharedPreferences
-  await userData
-      .loadDataFromSharedPreferences(); // Load data from SharedPreferences
-  runApp(MyApp(userData: userData)); // Run the app with the provided UserData
+  WidgetsFlutterBinding.ensureInitialized();
+  await Firebase.initializeApp(); // Initialize Firebase
+  // await userData.loadDataFromFirebase(); // Load data from Firebase
+  runApp(MyApp());
 }
 
 class MyApp extends StatelessWidget {
-  final UserData userData; // UserData object to hold user data
-
-  const MyApp({Key? key, required this.userData}) : super(key: key);
+  const MyApp({Key? key}) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'Flutter Job Portal', // App title
+      title: 'Flutter Job Portal',
       theme: ThemeData(
-        primarySwatch: Colors.brown, // Theme color
+        primarySwatch: Colors.brown,
       ),
       debugShowCheckedModeBanner: false, // Hide debug banner
-
-      home: BottomNavScreen(
-          userData: userData), // Set BottomNavScreen as the home screen
+      home: WillPopScope(
+        // Wrap your home widget with WillPopScope
+        onWillPop: () async {
+          // Handle back button press manually
+          return _onBackPressed(context);
+        },
+        child: SplashScreen(),
+      ),
     );
+  }
+
+  // Define a function to handle back button press
+  Future<bool> _onBackPressed(BuildContext context) {
+    // Check if the current route is the first route (i.e., splash screen)
+    if (Navigator.of(context).canPop()) {
+      Navigator.of(context).pop();
+      return Future.value(false); // Prevent app from exiting
+    } else {
+      return showDialog(
+        context: context,
+        builder: (context) => AlertDialog(
+          title: Text('Confirm Exit'),
+          content: Text('Do you want to exit the app?'),
+          actions: <Widget>[
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(false),
+              child: Text('No'),
+            ),
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(true),
+              child: Text('Yes'),
+            ),
+          ],
+        ),
+      ).then((value) => value ?? false);
+    }
   }
 }
 
-class BottomNavScreen extends StatefulWidget {
-  final UserData userData; // UserData object to hold user data
-
-  const BottomNavScreen({Key? key, required this.userData}) : super(key: key);
-
+class SplashScreen extends StatefulWidget {
   @override
-  _BottomNavScreenState createState() => _BottomNavScreenState();
+  _SplashScreenState createState() => _SplashScreenState();
 }
 
-class _BottomNavScreenState extends State<BottomNavScreen> {
-  int _selectedIndex = 0; // Index of the selected bottom navigation bar item
+class _SplashScreenState extends State<SplashScreen> {
+  @override
+  void initState() {
+    super.initState();
+    // Add a delay to simulate the splash screen
+    Future.delayed(Duration(seconds: 2), () {
+      // Navigate to the AuthenticationWrapper after the delay
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(builder: (context) => AuthenticationWrapper()),
+      );
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: _widgetOptions.elementAt(_selectedIndex), // Show selected widget
-      bottomNavigationBar: BottomNavigationBar(
-        items: const <BottomNavigationBarItem>[
-          BottomNavigationBarItem(
-            icon: Icon(Icons.home),
-            label: 'Home', // Home navigation item
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.people),
-            label: 'Candidates', // Candidates navigation item
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.work),
-            label: 'Job List', // Job List navigation item
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.person_2),
-            label: 'Post Jobs', // Post Jobs navigation item
-          ),
-        ],
-        currentIndex: _selectedIndex,
-        selectedItemColor:
-            Color.fromARGB(255, 0, 20, 37), // Change the color of selected item
-        unselectedItemColor:
-            Colors.grey, // Change the color of unselected items
-        backgroundColor: Colors.white,
-        onTap: (index) {
-          setState(() {
-            _selectedIndex = index; // Update the selected index
-          });
-        },
+      backgroundColor: Color(0x0F0F1F),
+      body: Center(
+        child: Image.asset('assets/images/exodus.gif'), // Your GIF path
       ),
     );
-  }
-
-  List<Widget> get _widgetOptions {
-    // Define the widgets for each navigation item
-    return [
-      HomeScreen(userData: widget.userData), // Home screen widget
-      CandidatesScreen(userData: widget.userData), // Candidates screen widget
-      JobListingsScreen(
-        jobListings: widget.userData.jobListings, // Job Listings screen widget
-        userData: widget.userData,
-      ),
-      CreatePostScreen(userData: widget.userData), // Create Post screen widget
-    ];
   }
 }
